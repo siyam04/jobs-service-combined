@@ -5,6 +5,7 @@ def home(request):
     data = [
         {
             "test": "Test",
+            "test2": "Test-2",
             "module_name": "JOBS",
             "providing_api_list":
                 {
