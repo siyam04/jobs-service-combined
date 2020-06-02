@@ -69,7 +69,7 @@ class JobView(View):
 
         else:
             # ToDo: ModelForm validation, params spreading for getting body data and create(), prevent duplicate obj creation
-
+            # ToDo: master testing
             # parsing body data
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
