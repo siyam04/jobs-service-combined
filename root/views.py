@@ -6,6 +6,7 @@ def home(request):
         {
             "test": "Test",
             "test2": "Test-2",
+            "test3": "Test-3",
             "module_name": "JOBS",
             "providing_api_list":
                 {
