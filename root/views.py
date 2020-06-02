@@ -4,6 +4,7 @@ from django.http import JsonResponse
 def home(request):
     data = [
         {
+            "test": "Test",
             "module_name": "JOBS",
             "providing_api_list":
                 {
