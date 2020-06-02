@@ -1,2 +1,2 @@
-# jobs-service-heroku
-Deployed to Heroku
+# JOBS Service
+* Provides API based on Microservices Architecture
