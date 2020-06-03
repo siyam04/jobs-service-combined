@@ -175,21 +175,6 @@ class CategoryView(View):
         else:
             return JsonResponse({"errors": form.errors}, status=422)
 
-        # # assigning parsed data
-        # name = body['name']
-        #
-        # # if data available
-        # if name:
-        #     # create category
-        #     Category.objects.create(name=name)
-        #
-        #     # return api response
-        #     return JsonResponse({'message': 'Created!'}, status=201)
-        #
-        # # if data not available
-        # else:
-        #     return JsonResponse({"message": "Not Found!"}, status=404)
-
     # 7
     def get(self, request):
         queryset = Category.objects.all()
@@ -206,7 +191,7 @@ class CategoryView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"data": "no content"}, status=204)
+            return JsonResponse({"data": "not found"}, status=404)
 
 
 # 8. Edit Category: http://127.0.0.1:8000/api/category/id/ (PUT)
@@ -226,7 +211,7 @@ class CategoryEditDeleteView(View):
             return JsonResponse({"name": category.name}, status=201)
 
         except Category.DoesNotExist as e:
-            return JsonResponse({"errors": e}, status=404)
+            return JsonResponse({"errors": f"{e}"}, status=404)
 
     # 9
     def delete(self, request, id=None):
@@ -235,7 +220,7 @@ class CategoryEditDeleteView(View):
             category.delete()
             return JsonResponse({"data": "deleted"}, status=200)
         except Category.DoesNotExist as e:
-            return JsonResponse({"errors": f"{e}"}, status=404)
+            return JsonResponse({"errors": f"{e}"}, status=204)
 
 
 # 10. Applied Jobs by Seeker: http://127.0.0.1:8000/api/job/seeker/id/ (GET)
@@ -255,15 +240,15 @@ class AppliedJobsBySeekerIDView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
 
 
-# 11. Posted Job List by Employer:: http://127.0.0.1:8000/api/job/employer/ (GET) (Need to add QS)
+# 11. Posted Job List by Employer: http://127.0.0.1:8000/api/job/employer/id/ (GET) (Need to add QS)
 @method_decorator(csrf_exempt, name='dispatch')
 class PostedJobListByEmployerView(View):
     # 11
     def get(self, request):
-        tracking_query = Job.objects.filter(employer_name='Texstream Fashion Ltd')
+        tracking_query = Job.objects.filter(employer_id='Texstream Fashion Ltd')
 
         data = []
 
@@ -275,7 +260,7 @@ class PostedJobListByEmployerView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
 
 
 # 12. Job-wise Seeker List: http://127.0.0.1:8000/api/job/id/seeker/ (GET)
@@ -295,4 +280,4 @@ class JobWiseSeekerListView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
