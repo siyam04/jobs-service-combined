@@ -12,7 +12,9 @@ from .models import (
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
+        # fields = ['id', 'name']
         fields = ['name']
+        # fields = '__all__'
 
 
 # Job Form

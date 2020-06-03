@@ -132,34 +132,23 @@ class JobView(View):
 # 5. Delete Job: http://127.0.0.1:8000/api/job/id/ (DELETE)
 @method_decorator(csrf_exempt, name='dispatch')
 class JobEditDeleteView(View):
-    ## ToDo: BUG
-    def put(self, request, id=None, *args, **kwargs):
-        body_unicode = request.body.decode('utf-8')
-        body = json.loads(body_unicode)
-        body.update({"job": id})
-        print(body)
+    # 4
+    def put(self, request, id=None):
+        try:
+            body_unicode = request.body.decode('utf-8')
+            body = json.loads(body_unicode)
 
-        obj = Job.objects.update(**body)
+            job_title = body['job_title']
+            job = get_object_or_404(Job, id=id)
+            job.job_title = job_title
+            job.save()
 
-        return JsonResponse({"data": obj}, status=200)
+            return JsonResponse({"message": "Updated!"}, status=201)
 
-        # data = {}
-        # for field in self.job_fields:
-        #     data.update({field: body[field]})
-        #
-        # print(data)
-        # print(id)
-
-        ## OLD
-        # job_title = body['job_title']
-        # job = get_object_or_404(Job, id=id)
-        # job.job_title = job_title
-        # job.save()
-        #
-        # return JsonResponse({"message": "Updated!"}, status=201)
+        except Job.DoesNotExist as e:
+            return JsonResponse({"message": e}, status=404)
 
     # 5
-    ## ToDo: BUG
     def delete(self, request, id=None):
         job = get_object_or_404(Job, id=id)
         if job:
@@ -229,25 +218,24 @@ class CategoryEditDeleteView(View):
         try:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
-
             name = body['name']
+
             category = get_object_or_404(Category, id=id)
             category.name = name
             category.save()
-
-            return JsonResponse({"message": "Updated!"}, status=201, safe=False)
+            return JsonResponse({"name": category.name}, status=201)
 
         except Category.DoesNotExist as e:
-            return JsonResponse({"message": e}, status=404, safe=False)
+            return JsonResponse({"errors": e}, status=404)
 
     # 9
     def delete(self, request, id=None):
-        category = get_object_or_404(Category, id=id)
-        if category:
+        try:
+            category = Category.objects.get(id=id)
             category.delete()
-            return JsonResponse({"message": "Deleted!"}, status=200)
-        else:
-            return JsonResponse({"message": "No Content"}, status=204)
+            return JsonResponse({"data": "deleted"}, status=200)
+        except Category.DoesNotExist as e:
+            return JsonResponse({"errors": f"{e}"}, status=404)
 
 
 # 10. Applied Jobs by Seeker: http://127.0.0.1:8000/api/job/seeker/id/ (GET)
