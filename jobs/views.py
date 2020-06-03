@@ -92,7 +92,7 @@ class JobView(View):
 
     # 2
     # 3
-    def get(self, request, id=None):
+    def get(self, request, id=None, *args, **kwargs):
         jobs = Job.objects
 
         # 3. Job Details
@@ -102,11 +102,6 @@ class JobView(View):
 
         # 2. Job List
         else:
-            # Normal
-            # query = jobs.values(*self.job_fields_with_id)
-            # data = list(query)
-
-            # QS
             data = {}
             fields = jobs.values(*self.job_fields_with_id)
             for field in self.job_list_querystring:
@@ -137,23 +132,34 @@ class JobView(View):
 # 5. Delete Job: http://127.0.0.1:8000/api/job/id/ (DELETE)
 @method_decorator(csrf_exempt, name='dispatch')
 class JobEditDeleteView(View):
-    # 4
-    def put(self, request, id=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
+    ## ToDo: BUG
+    def put(self, request, id=None, *args, **kwargs):
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        body.update({"job": id})
+        print(body)
 
-            job_title = body['job_title']
-            job = get_object_or_404(Job, id=id)
-            job.job_title = job_title
-            job.save()
+        obj = Job.objects.update(**body)
 
-            return JsonResponse({"message": "Updated!"}, status=201)
+        return JsonResponse({"data": obj}, status=200)
 
-        except Job.DoesNotExist as e:
-            return JsonResponse({"message": e}, status=404)
+        # data = {}
+        # for field in self.job_fields:
+        #     data.update({field: body[field]})
+        #
+        # print(data)
+        # print(id)
+
+        ## OLD
+        # job_title = body['job_title']
+        # job = get_object_or_404(Job, id=id)
+        # job.job_title = job_title
+        # job.save()
+        #
+        # return JsonResponse({"message": "Updated!"}, status=201)
 
     # 5
+    ## ToDo: BUG
     def delete(self, request, id=None):
         job = get_object_or_404(Job, id=id)
         if job:
@@ -169,33 +175,39 @@ class JobEditDeleteView(View):
 class CategoryView(View):
     # 6
     def post(self, request):
-        # getting api data from Employer module
-        # parsing body data
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
 
-        # assigning parsed data
-        name = body['name']
+        form = CategoryForm(body)
 
-        # if data available
-        if name:
-            # create category
-            Category.objects.create(name=name)
-
-            # return api response
-            return JsonResponse({'message': 'Created!'}, status=201)
-
-        # if data not available
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=["name"]))
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"errors": form.errors}, status=422)
+
+        # # assigning parsed data
+        # name = body['name']
+        #
+        # # if data available
+        # if name:
+        #     # create category
+        #     Category.objects.create(name=name)
+        #
+        #     # return api response
+        #     return JsonResponse({'message': 'Created!'}, status=201)
+        #
+        # # if data not available
+        # else:
+        #     return JsonResponse({"message": "Not Found!"}, status=404)
 
     # 7
     def get(self, request):
-        category_queryset = Category.objects.all()
+        queryset = Category.objects.all()
 
         data = []
 
-        for element in category_queryset:
+        for element in queryset:
             job_count = Job.objects.filter(category__id=element.id).count()
 
             data.append(
@@ -203,9 +215,9 @@ class CategoryView(View):
             )
 
         if data:
-            return JsonResponse({"categories": data}, status=200, safe=False)
+            return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404, safe=False)
+            return JsonResponse({"data": "no content"}, status=204)
 
 
 # 8. Edit Category: http://127.0.0.1:8000/api/category/id/ (PUT)
