@@ -9,7 +9,7 @@ def home(request):
                 {
                     "0. Static APIs (GET)": "http://galib04.pythonanywhere.com/api/choices/",
                     "1. Create Job (POST)": "http://galib04.pythonanywhere.com/api/job/",
-                    "2. Job List (GET)": "http://galib04.pythonanywhere.com/api/job/?no_of_vacancies=2&category=1&employer_id=17&age=30&gender=M",
+                    "2. Job List (GET)": "http://galib04.pythonanywhere.com/api/job/?no_of_vacancies=16&category=1&employer_id=11&age=24&gender=M",
                     "3. Job Details (GET)": "http://galib04.pythonanywhere.com/api/job/1/",
                     "4. Edit Job (PUT)": "http://galib04.pythonanywhere.com/api/job/1/",
                     "5. Delete Job (DELETE)": "http://galib04.pythonanywhere.com/api/job/1/",
