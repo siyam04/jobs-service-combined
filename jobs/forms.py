@@ -12,9 +12,7 @@ from .models import (
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        # fields = ['id', 'name']
         fields = ['name']
-        # fields = '__all__'
 
 
 # Job Form
@@ -31,8 +29,11 @@ class JobTrackingForm(forms.ModelForm):
         fields = ['job', 'seeker_id', 'seeker_name']
 
 
-
-
-
-
-
+# Job Edit Form
+class JobEditForm(forms.ModelForm):
+    class Meta:
+        model = Job
+        fields = [
+            'job_responsibilities', 'job_location', 'no_of_vacancies', 'employer_information', 'employment_status',
+            'age', 'gender', 'skill', 'experience', 'training', 'compensation_and_other_benefits', 'resume_receiving_option'
+        ]

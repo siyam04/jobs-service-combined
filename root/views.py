@@ -13,14 +13,14 @@ def home(request):
                     "3. Job Details (GET)": "http://galib04.pythonanywhere.com/api/job/1/",
                     "4. Edit Job (PUT)": "http://galib04.pythonanywhere.com/api/job/1/",
                     "5. Delete Job (DELETE)": "http://galib04.pythonanywhere.com/api/job/1/",
-                    "6. Create Category (POST)": "http://galib04.pythonanywhere.com/api/category/",
-                    "7. Category List (GET)": "http://galib04.pythonanywhere.com/api/category/",
-                    "8. Edit Category (PUT)": "http://galib04.pythonanywhere.com/api/category/1/",
-                    "9. Delete Category (DELETE)": "http://galib04.pythonanywhere.com/api/category/1/",
-                    "10. Applied Jobs by Seeker ID (GET)": "http://galib04.pythonanywhere.com/api/job/seeker/1/",
-                    "11. Posted Job List by Employer (GET)": "http://galib04.pythonanywhere.com/api/job/employer/",
-                    "12. Job-wise Seeker List (GET)": "http://galib04.pythonanywhere.com/api/job/1/seeker/",
-                    "13. Apply Job (POST)": "http://galib04.pythonanywhere.com/api/job/apply/1/"
+                    "6. Apply Job (POST)": "http://galib04.pythonanywhere.com/api/job/apply/1/",
+                    "7. Create Category (POST)": "http://galib04.pythonanywhere.com/api/category/",
+                    "8. Category List (GET)": "http://galib04.pythonanywhere.com/api/category/",
+                    "9. Edit Category (PUT)": "http://galib04.pythonanywhere.com/api/category/1/",
+                    "10. Delete Category (DELETE)": "http://galib04.pythonanywhere.com/api/category/1/",
+                    "11. Applied Jobs by Seeker ID (GET)": "http://galib04.pythonanywhere.com/api/job/seeker/1/",
+                    "12. Posted Job List by Employer (GET)": "http://galib04.pythonanywhere.com/api/job/employer/",
+                    "13. Job-wise Seeker List (GET)": "http://galib04.pythonanywhere.com/api/job/1/seeker/"
                 },
             "expecting_api_list":
                 {

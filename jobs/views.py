@@ -19,10 +19,10 @@ from .models import (
     Category,
     JobTracking,
 )
-from .forms import CategoryForm, JobForm, JobTrackingForm
+from .forms import CategoryForm, JobForm, JobTrackingForm, JobEditForm
 
 
-# 0. Static APIs: http://127.0.0.1:8000/api/choices/
+# 0. Static APIs (GET): http://127.0.0.1:8000/api/choices/
 @method_decorator(csrf_exempt, name='dispatch')
 class StaticChoiceView(View):
     def get(self, request):
@@ -37,10 +37,12 @@ class StaticChoiceView(View):
         return JsonResponse({"data": data}, status=200)
 
 
-# 1. Create Job: http://127.0.0.1:8000/api/job/ (POST)
-# 2. Job List: http://127.0.0.1:8000/api/job/ (GET)
-# 3. Job Details: http://127.0.0.1:8000/api/job/id/ (GET)
-# 13. Apply Job: http://127.0.0.1:8000/api/job/apply/id/ (POST)
+# 1. Create Job (POST): http://127.0.0.1:8000/api/job/
+# 2. Job List (GET)(QS): http://127.0.0.1:8000/api/job/?no_of_vacancies=14&category=1&employer_id=14&age=25&gender=M
+# 3. Job Details (GET): http://127.0.0.1:8000/api/job/{id}/
+# 4. Edit Job (PUT): http://127.0.0.1:8000/api/job/{id}/
+# 5. Delete Job (DELETE): http://127.0.0.1:8000/api/job/{id}/
+# 6. Apply Job (POST): http://127.0.0.1:8000/api/job/{id}/apply/
 @method_decorator(csrf_exempt, name='dispatch')
 class JobView(View):
     job_fields = [
@@ -55,13 +57,17 @@ class JobView(View):
         'age', 'gender', 'skill', 'experience', 'training', 'salary', 'compensation_and_other_benefits',
         'application_deadline', 'resume_receiving_option'
     ]
+    job_edit_fields = [
+        'job_responsibilities', 'job_location', 'no_of_vacancies', 'employer_information', 'employment_status',
+        'age', 'gender', 'skill', 'experience', 'training', 'compensation_and_other_benefits', 'resume_receiving_option'
+    ]
     job_tracking_fields = ['seeker_id', 'seeker_name', 'job']
     job_list_querystring = ['no_of_vacancies', 'category', 'employer_id', 'age', 'gender']
 
     # 1
-    # 13
-    def post(self, request, id=None, *args, **kwargs):
-        # 13. Apply Job
+    # 6
+    def post(self, request, id=None):
+        # 6. Apply Job
         if id:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
@@ -72,10 +78,8 @@ class JobView(View):
             if form.is_valid():
                 instance = form.save()
                 return JsonResponse(model_to_dict(instance, fields=self.job_tracking_fields), status=201)
-                # return JsonResponse(model_to_dict(instance, fields=[field.name for field in instance._meta.fields]))
-                # return JsonResponse(model_to_dict(instance, fields=["seeker_name", "seeker_id"]))
             else:
-                return JsonResponse({"errors": form.errors}, status=422)
+                return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
         # 1. Create Job
         else:
@@ -88,7 +92,7 @@ class JobView(View):
                 instance = form.save()
                 return JsonResponse(model_to_dict(instance, fields=self.job_fields), status=201)
             else:
-                return JsonResponse({"errors": form.errors}, status=422)
+                return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 2
     # 3
@@ -100,7 +104,7 @@ class JobView(View):
             query = jobs.get(id=id)
             return JsonResponse(model_to_dict(query, fields=self.job_fields_with_id), status=200)
 
-        # 2. Job List
+        # 2. Job List (QueryString)
         else:
             data = {}
             fields = jobs.values(*self.job_fields_with_id)
@@ -108,13 +112,11 @@ class JobView(View):
                 data.update({field: request.GET.get(field)})
 
             jobs = list(fields.filter(**data))
-            data = list(jobs)
 
             # pagination
-            paginator = Paginator(data, 3)
+            paginator = Paginator(jobs, 3)
             page_number = request.GET.get('page')
             page_obj = paginator.get_page(page_number)
-
             context = {
                 "data": list(page_obj),  # or, list(page_obj.object_list)
                 "pagination": {
@@ -124,42 +126,35 @@ class JobView(View):
                     "next": page_obj.has_next() > 0 and page_obj.next_page_number() or None,
                 }
             }
-
             return JsonResponse(context)
 
-
-# 4. Edit Job : http://127.0.0.1:8000/api/job/id/ (PUT)
-# 5. Delete Job: http://127.0.0.1:8000/api/job/id/ (DELETE)
-@method_decorator(csrf_exempt, name='dispatch')
-class JobEditDeleteView(View):
     # 4
     def put(self, request, id=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
 
-            job_title = body['job_title']
-            job = get_object_or_404(Job, id=id)
-            job.job_title = job_title
-            job.save()
+        job = Job.objects.get(id=id)
 
-            return JsonResponse({"message": "Updated!"}, status=201)
+        form = JobEditForm(body, instance=job)
 
-        except Job.DoesNotExist as e:
-            return JsonResponse({"message": e}, status=404)
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=self.job_edit_fields), status=200)
+        else:
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 5
     def delete(self, request, id=None):
-        job = get_object_or_404(Job, id=id)
-        if job:
+        try:
+            job = Job.objects.get(id=id)
             job.delete()
-            return JsonResponse({"message": "Deleted!"}, status=200)
-        else:
-            return JsonResponse({"message": "No Content"}, status=204)
+            return JsonResponse({"data": "deleted"}, status=200)
+        except Job.DoesNotExist as e:
+            return JsonResponse({"errors": f"{e}"}, status=204)
 
 
-# 6. Create Category : http://127.0.0.1:8000/api/category/create/ (POST)
-# 7. Category List: http://127.0.0.1:8000/api/category/ (GET)
+# 7. Create Category (POST): http://127.0.0.1:8000/api/category/
+# 8. Category List (GET): http://127.0.0.1:8000/api/category/
 @method_decorator(csrf_exempt, name='dispatch')
 class CategoryView(View):
     # 6
@@ -171,9 +166,9 @@ class CategoryView(View):
 
         if form.is_valid():
             instance = form.save()
-            return JsonResponse(model_to_dict(instance, fields=["name"]))
+            return JsonResponse(model_to_dict(instance, fields=["name"]), status=201)
         else:
-            return JsonResponse({"errors": form.errors}, status=422)
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 7
     def get(self, request):
@@ -193,25 +188,41 @@ class CategoryView(View):
         else:
             return JsonResponse({"data": "not found"}, status=404)
 
-
-# 8. Edit Category: http://127.0.0.1:8000/api/category/id/ (PUT)
-# 9. Delete Category: http://127.0.0.1:8000/api/category/id/ (DELETE)
-@method_decorator(csrf_exempt, name='dispatch')
-class CategoryEditDeleteView(View):
     # 8
     def put(self, request, id=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
-            name = body['name']
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
 
-            category = get_object_or_404(Category, id=id)
-            category.name = name
-            category.save()
-            return JsonResponse({"name": category.name}, status=201)
+        category = Category.objects.get(id=id)
 
-        except Category.DoesNotExist as e:
-            return JsonResponse({"errors": f"{e}"}, status=404)
+        form = CategoryForm(body, instance=category)
+
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=["name"]), status=200)
+        else:
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
+
+
+        #     name = body['name']
+        #
+        #     category = Category.objects.get(id=id)
+        #     category.name = name
+        #     category.save()
+        #     return JsonResponse({"name": category.name}, status=201)
+        #
+        # except Category.DoesNotExist as e:
+        #     return JsonResponse({"errors": f"{e}"}, status=404)
+
+        # job = Job.objects.get(id=id)
+        #
+        # form = JobEditForm(body, instance=job)
+        #
+        # if form.is_valid():
+        #     instance = form.save()
+        #     return JsonResponse(model_to_dict(instance, fields=self.job_edit_fields), status=200)
+        # else:
+        #     return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 9
     def delete(self, request, id=None):
@@ -223,7 +234,7 @@ class CategoryEditDeleteView(View):
             return JsonResponse({"errors": f"{e}"}, status=204)
 
 
-# 10. Applied Jobs by Seeker: http://127.0.0.1:8000/api/job/seeker/id/ (GET)
+# 11. Applied Jobs by Seeker ID (GET): http://127.0.0.1:8000/api/job/seeker/{id}/
 @method_decorator(csrf_exempt, name='dispatch')
 class AppliedJobsBySeekerIDView(View):
     # 10
@@ -243,12 +254,12 @@ class AppliedJobsBySeekerIDView(View):
             return JsonResponse({"data": "not found"}, status=404)
 
 
-# 11. Posted Job List by Employer: http://127.0.0.1:8000/api/job/employer/id/ (GET) (Need to add QS)
+# 12. Posted Job List by Employer ID (GET): http://127.0.0.1:8000/api/job/employer/{id}/
 @method_decorator(csrf_exempt, name='dispatch')
 class PostedJobListByEmployerView(View):
     # 11
     def get(self, request):
-        tracking_query = Job.objects.filter(employer_id='Texstream Fashion Ltd')
+        tracking_query = Job.objects.filter(employer_name='Texstream Fashion Ltd')
 
         data = []
 
@@ -263,7 +274,7 @@ class PostedJobListByEmployerView(View):
             return JsonResponse({"data": "not found"}, status=404)
 
 
-# 12. Job-wise Seeker List: http://127.0.0.1:8000/api/job/id/seeker/ (GET)
+# 13. Job-wise Seeker List (GET): http://127.0.0.1:8000/api/job/{id}/seeker/
 @method_decorator(csrf_exempt, name='dispatch')
 class JobWiseSeekerListView(View):
     # 12
