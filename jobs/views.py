@@ -19,10 +19,10 @@ from .models import (
     Category,
     JobTracking,
 )
-from .forms import JobTrackingForm
+from .forms import CategoryForm, JobForm, JobTrackingForm, JobEditForm
 
 
-# Static APIs: http://127.0.0.1:8000/api/choices/
+# 0. Static APIs (GET): http://127.0.0.1:8000/api/choices/
 @method_decorator(csrf_exempt, name='dispatch')
 class StaticChoiceView(View):
     def get(self, request):
@@ -34,23 +34,40 @@ class StaticChoiceView(View):
                 "resume_receiving_option": dict(Job.ResumeReceivingOption.choices)
             }
         ]
-
         return JsonResponse({"data": data}, status=200)
 
 
-# 1. Create Job: http://127.0.0.1:8000/api/job/ (POST)
-# 2. Job List: http://127.0.0.1:8000/api/job/ (GET)
-# 3. Job Details: http://127.0.0.1:8000/api/job/id/ (GET)
-# 13. Apply Job: http://127.0.0.1:8000/api/job/apply/id/ (POST)
+# 1. Create Job (POST): http://127.0.0.1:8000/api/job/
+# 2. Job List (GET)(QS): http://127.0.0.1:8000/api/job/?no_of_vacancies=14&category=1&employer_id=14&age=25&gender=M
+# 3. Job Details (GET): http://127.0.0.1:8000/api/job/{id}/
+# 4. Edit Job (PUT): http://127.0.0.1:8000/api/job/{id}/
+# 5. Delete Job (DELETE): http://127.0.0.1:8000/api/job/{id}/
+# 6. Apply Job (POST): http://127.0.0.1:8000/api/job/{id}/apply/
 @method_decorator(csrf_exempt, name='dispatch')
 class JobView(View):
-    job_fields = ['id', 'job_title', 'no_of_vacancies', 'category']
-    list_querystring = ['no_of_vacancies', 'category']
-    list_details = ['age', 'category']
+    job_fields = [
+        'job_title', 'job_level', 'job_responsibilities', 'job_location', 'no_of_vacancies', 'category',
+        'employer_id', 'employer_name', 'employer_information', 'employment_status', 'employer_location',
+        'age', 'gender', 'skill', 'experience', 'training', 'salary', 'compensation_and_other_benefits',
+        'application_deadline', 'resume_receiving_option'
+    ]
+    job_fields_with_id = [
+        'id', 'job_title', 'job_level', 'job_responsibilities', 'job_location', 'no_of_vacancies', 'category',
+        'employer_id', 'employer_name', 'employer_information', 'employment_status', 'employer_location',
+        'age', 'gender', 'skill', 'experience', 'training', 'salary', 'compensation_and_other_benefits',
+        'application_deadline', 'resume_receiving_option'
+    ]
+    job_edit_fields = [
+        'job_responsibilities', 'job_location', 'no_of_vacancies', 'employer_information', 'employment_status',
+        'age', 'gender', 'skill', 'experience', 'training', 'compensation_and_other_benefits', 'resume_receiving_option'
+    ]
     job_tracking_fields = ['seeker_id', 'seeker_name', 'job']
+    job_list_querystring = ['no_of_vacancies', 'category', 'employer_id', 'age', 'gender']
 
     # 1
-    def post(self, request, id=None, *args, **kwargs):
+    # 6
+    def post(self, request, id=None):
+        # 6. Apply Job
         if id:
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
@@ -60,129 +77,46 @@ class JobView(View):
 
             if form.is_valid():
                 instance = form.save()
-
-                return JsonResponse(model_to_dict(instance, fields=self.job_tracking_fields))
-                # return JsonResponse(model_to_dict(instance, fields=[field.name for field in instance._meta.fields]))
-                # return JsonResponse(model_to_dict(instance, fields=["seeker_name", "seeker_id"]))
+                return JsonResponse(model_to_dict(instance, fields=self.job_tracking_fields), status=201)
             else:
-                return JsonResponse({"errors": form.errors}, status=402)
+                return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
+        # 1. Create Job
         else:
-            # ToDo: ModelForm validation, params spreading for getting body data and create(), prevent duplicate obj creation
-
-            # parsing body data
             body_unicode = request.body.decode('utf-8')
             body = json.loads(body_unicode)
 
-            # assigning parsed data
-            job_title = body['job_title']
-            job_level = body['job_level']
-            job_responsibilities = body['job_responsibilities']
-            job_location = body['job_location']
-            no_of_vacancies = body['no_of_vacancies']
+            form = JobForm(body)
 
-            # getting category object by body data
-            try:
-                category_id = json.dumps(body['category'])
-                category = Category.objects.get(id=category_id)
-            except Exception as e:
-                return JsonResponse({"message": e})
-
-            employer_id = body['employer_id']
-            employer_name = body['employer_name']
-            employer_information = body['employer_information']
-            employment_status = body['employment_status']
-            employer_location = body['employer_location']
-
-            age = body['age']
-            gender = body['gender']
-            skill = body['skill']
-            experience = body['experience']
-            # degree = body['degree']
-            training = body['training']
-            salary = body['salary']
-            compensation_and_other_benefits = body['compensation_and_other_benefits']
-
-            application_deadline = body['application_deadline']
-            resume_receiving_option = body['resume_receiving_option']
-
-            # if data available
-            if job_title and job_level and job_responsibilities and job_location and no_of_vacancies and category and employer_id and employer_name and employer_information and employment_status and employer_location and age and gender and skill and experience and training and salary and compensation_and_other_benefits and application_deadline and resume_receiving_option:
-
-                # body_params = [
-                #     job_title, job_level, job_responsibilities, job_location, no_of_vacancies,
-                #     employer_id, employer_name, employer_information, employment_status, employer_location,
-                #     age, gender, skill, experience, training, salary, compensation_and_other_benefits,
-                #     application_deadline, resume_receiving_option
-                # ]
-
-                # create job
-                Job.objects.create(
-                    job_title=job_title,
-                    job_level=job_level,
-                    job_responsibilities=job_responsibilities,
-                    job_location=job_location,
-                    no_of_vacancies=no_of_vacancies,
-
-                    category=category,
-
-                    employer_id=employer_id,
-                    employer_name=employer_name,
-                    employer_information=employer_information,
-                    employment_status=employment_status,
-                    employer_location=employer_location,
-
-                    age=age,
-                    gender=gender,
-                    skill=skill,
-                    experience=experience,
-                    # degree=degree,
-                    training=training,
-                    salary=salary,
-                    compensation_and_other_benefits=compensation_and_other_benefits,
-
-                    application_deadline=application_deadline,
-                    resume_receiving_option=resume_receiving_option,
-                )
-
-                # return api response
-                return JsonResponse({'message': 'Job Created!'}, status=201, safe=False)
-
-            # if data not available
+            if form.is_valid():
+                instance = form.save()
+                return JsonResponse(model_to_dict(instance, fields=self.job_fields), status=201)
             else:
-                return JsonResponse({"message": "Not Found!"}, status=404, safe=False)
+                return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 2
     # 3
-    def get(self, request, id=None):
-        queryset = Job.objects
+    def get(self, request, id=None, *args, **kwargs):
+        jobs = Job.objects
 
+        # 3. Job Details
         if id:
-            job_detail = queryset.get(id=id)
-            data = {
-                "id": job_detail.id,
-                "job_title": job_detail.job_title,
-                "job_level": job_detail.job_level,
-                "job_responsibilities": job_detail.job_responsibilities,
-            }
-        else:
-            # list search
-            job_list = queryset.values(*self.list_fields)
-            data = list(job_list)
+            query = jobs.get(id=id)
+            return JsonResponse(model_to_dict(query, fields=self.job_fields_with_id), status=200)
 
-            # QS
-            ## job_list = queryset.values(*self.list_querystring)
-            # job_list = queryset.values(*self.list_fields)
-            # no_of_vacancies = request.GET.get('no_of_vacancies')
-            # category = request.GET.get('category')
-            # jobs = list(job_list.filter(no_of_vacancies=no_of_vacancies, category=category))
-            # data = list(jobs)
+        # 2. Job List (QueryString)
+        else:
+            data = {}
+            fields = jobs.values(*self.job_fields_with_id)
+            for field in self.job_list_querystring:
+                data.update({field: request.GET.get(field)})
+
+            jobs = list(fields.filter(**data))
 
             # pagination
-            paginator = Paginator(data, 5)
+            paginator = Paginator(jobs, 3)
             page_number = request.GET.get('page')
             page_obj = paginator.get_page(page_number)
-
             context = {
                 "data": list(page_obj),  # or, list(page_obj.object_list)
                 "pagination": {
@@ -192,75 +126,57 @@ class JobView(View):
                     "next": page_obj.has_next() > 0 and page_obj.next_page_number() or None,
                 }
             }
-
             return JsonResponse(context)
 
-        return JsonResponse({"data": data}, status=200)
-
-
-# 4. Edit Job : http://127.0.0.1:8000/api/job/id/ (PUT)
-# 5. Delete Job: http://127.0.0.1:8000/api/job/id/ (DELETE)
-@method_decorator(csrf_exempt, name='dispatch')
-class JobEditDeleteView(View):
     # 4
     def put(self, request, id=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
 
-            job_title = body['job_title']
-            job = get_object_or_404(Job, id=id)
-            job.job_title = job_title
-            job.save()
+        job = Job.objects.get(id=id)
 
-            return JsonResponse({"message": "Updated!"}, status=201)
+        form = JobEditForm(body, instance=job)
 
-        except Job.DoesNotExist as e:
-            return JsonResponse({"message": e}, status=404)
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=self.job_edit_fields), status=200)
+        else:
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 5
     def delete(self, request, id=None):
-        job = get_object_or_404(Job, id=id)
-        if job:
+        try:
+            job = Job.objects.get(id=id)
             job.delete()
-            return JsonResponse({"message": "Deleted!"}, status=200)
-        else:
-            return JsonResponse({"message": "No Content"}, status=204)
+            return JsonResponse({"data": "deleted"}, status=200)
+        except Job.DoesNotExist as e:
+            return JsonResponse({"errors": f"{e}"}, status=204)
 
 
-# 6. Create Category : http://127.0.0.1:8000/api/category/create/ (POST)
-# 7. Category List: http://127.0.0.1:8000/api/category/ (GET)
+# 7. Create Category (POST): http://127.0.0.1:8000/api/category/
+# 8. Category List (GET): http://127.0.0.1:8000/api/category/
 @method_decorator(csrf_exempt, name='dispatch')
 class CategoryView(View):
     # 6
     def post(self, request):
-        # getting api data from Employer module
-        # parsing body data
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
 
-        # assigning parsed data
-        name = body['name']
+        form = CategoryForm(body)
 
-        # if data available
-        if name:
-            # create category
-            Category.objects.create(name=name)
-
-            # return api response
-            return JsonResponse({'message': 'Created!'}, status=201)
-
-        # if data not available
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=["name"]), status=201)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 7
     def get(self, request):
-        category_queryset = Category.objects.all()
+        queryset = Category.objects.all()
 
         data = []
 
-        for element in category_queryset:
+        for element in queryset:
             job_count = Job.objects.filter(category__id=element.id).count()
 
             data.append(
@@ -268,42 +184,57 @@ class CategoryView(View):
             )
 
         if data:
-            return JsonResponse({"categories": data}, status=200, safe=False)
+            return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404, safe=False)
+            return JsonResponse({"data": "not found"}, status=404)
 
-
-# 8. Edit Category: http://127.0.0.1:8000/api/category/id/ (PUT)
-# 9. Delete Category: http://127.0.0.1:8000/api/category/id/ (DELETE)
-@method_decorator(csrf_exempt, name='dispatch')
-class CategoryEditDeleteView(View):
     # 8
     def put(self, request, id=None):
-        try:
-            body_unicode = request.body.decode('utf-8')
-            body = json.loads(body_unicode)
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
 
-            name = body['name']
-            category = get_object_or_404(Category, id=id)
-            category.name = name
-            category.save()
+        category = Category.objects.get(id=id)
 
-            return JsonResponse({"message": "Updated!"}, status=201, safe=False)
+        form = CategoryForm(body, instance=category)
 
-        except Category.DoesNotExist as e:
-            return JsonResponse({"message": e}, status=404, safe=False)
+        if form.is_valid():
+            instance = form.save()
+            return JsonResponse(model_to_dict(instance, fields=["name"]), status=200)
+        else:
+            return JsonResponse({"errors": form.errors.as_json()}, status=422)
+
+
+        #     name = body['name']
+        #
+        #     category = Category.objects.get(id=id)
+        #     category.name = name
+        #     category.save()
+        #     return JsonResponse({"name": category.name}, status=201)
+        #
+        # except Category.DoesNotExist as e:
+        #     return JsonResponse({"errors": f"{e}"}, status=404)
+
+        # job = Job.objects.get(id=id)
+        #
+        # form = JobEditForm(body, instance=job)
+        #
+        # if form.is_valid():
+        #     instance = form.save()
+        #     return JsonResponse(model_to_dict(instance, fields=self.job_edit_fields), status=200)
+        # else:
+        #     return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
     # 9
     def delete(self, request, id=None):
-        category = get_object_or_404(Category, id=id)
-        if category:
+        try:
+            category = Category.objects.get(id=id)
             category.delete()
-            return JsonResponse({"message": "Deleted!"}, status=200)
-        else:
-            return JsonResponse({"message": "No Content"}, status=204)
+            return JsonResponse({"data": "deleted"}, status=200)
+        except Category.DoesNotExist as e:
+            return JsonResponse({"errors": f"{e}"}, status=204)
 
 
-# 10. Applied Jobs by Seeker: http://127.0.0.1:8000/api/job/seeker/id/ (GET)
+# 11. Applied Jobs by Seeker ID (GET): http://127.0.0.1:8000/api/job/seeker/{id}/
 @method_decorator(csrf_exempt, name='dispatch')
 class AppliedJobsBySeekerIDView(View):
     # 10
@@ -320,10 +251,10 @@ class AppliedJobsBySeekerIDView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
 
 
-# 11. Posted Job List by Employer:: http://127.0.0.1:8000/api/job/employer/ (GET) (Need to add QS)
+# 12. Posted Job List by Employer ID (GET): http://127.0.0.1:8000/api/job/employer/{id}/
 @method_decorator(csrf_exempt, name='dispatch')
 class PostedJobListByEmployerView(View):
     # 11
@@ -340,10 +271,10 @@ class PostedJobListByEmployerView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
 
 
-# 12. Job-wise Seeker List: http://127.0.0.1:8000/api/job/id/seeker/ (GET)
+# 13. Job-wise Seeker List (GET): http://127.0.0.1:8000/api/job/{id}/seeker/
 @method_decorator(csrf_exempt, name='dispatch')
 class JobWiseSeekerListView(View):
     # 12
@@ -360,4 +291,4 @@ class JobWiseSeekerListView(View):
         if data:
             return JsonResponse({"data": data}, status=200)
         else:
-            return JsonResponse({"message": "Not Found!"}, status=404)
+            return JsonResponse({"data": "not found"}, status=404)
