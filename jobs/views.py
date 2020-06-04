@@ -236,8 +236,8 @@ class AppliedJobsBySeekerView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class PostedJobListByEmployerView(View):
     # 12
-    def get(self, request):
-        tracking_query = Job.objects.filter(employer_name='Texstream Fashion Ltd')
+    def get(self, request, id=None):
+        tracking_query = Job.objects.filter(employer_id=id)
 
         data = []
 
