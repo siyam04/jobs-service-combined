@@ -19,7 +19,7 @@ def home(request):
                     "9. Edit Category (PUT)": "http://galib04.pythonanywhere.com/api/category/1/",
                     "10. Delete Category (DELETE)": "http://galib04.pythonanywhere.com/api/category/1/",
                     "11. Applied Jobs by Seeker ID (GET)": "http://galib04.pythonanywhere.com/api/job/seeker/1/",
-                    "12. Posted Job List by Employer (GET)": "http://galib04.pythonanywhere.com/api/job/employer/",
+                    "12. Posted Job List by Employer ID (GET)": "http://galib04.pythonanywhere.com/api/job/employer/14/",
                     "13. Job-wise Seeker List (GET)": "http://galib04.pythonanywhere.com/api/job/1/seeker/"
                 },
             "expecting_api_list":
