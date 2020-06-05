@@ -42,21 +42,11 @@ class StaticChoiceView(View):
 # 6. Apply Job (POST): http://127.0.0.1:8000/api/job/{id}/apply/
 @method_decorator(csrf_exempt, name='dispatch')
 class JobView(View):
-    job_fields = [
-        'job_title', 'job_level', 'job_responsibilities', 'job_location', 'no_of_vacancies', 'category',
-        'employer_id', 'employer_name', 'employer_information', 'employment_status', 'employer_location',
-        'age', 'gender', 'skill', 'experience', 'training', 'salary', 'compensation_and_other_benefits',
-        'application_deadline', 'resume_receiving_option'
-    ]
     job_fields_with_id = [
         'id', 'job_title', 'job_level', 'job_responsibilities', 'job_location', 'no_of_vacancies', 'category',
         'employer_id', 'employer_name', 'employer_information', 'employment_status', 'employer_location',
         'age', 'gender', 'skill', 'experience', 'training', 'salary', 'compensation_and_other_benefits',
         'application_deadline', 'resume_receiving_option'
-    ]
-    job_edit_fields = [
-        'job_responsibilities', 'job_location', 'no_of_vacancies', 'employer_information', 'employment_status',
-        'age', 'gender', 'skill', 'experience', 'training', 'compensation_and_other_benefits', 'resume_receiving_option'
     ]
     job_tracking_fields = ['seeker_id', 'seeker_name', 'job']
     job_list_querystring = ['no_of_vacancies', 'category', 'employer_id', 'age', 'gender']
@@ -87,7 +77,7 @@ class JobView(View):
 
             if form.is_valid():
                 instance = form.save()
-                return JsonResponse(model_to_dict(instance, fields=self.job_fields), status=201)
+                return JsonResponse(model_to_dict(instance, fields=self.job_fields_with_id), status=201)
             else:
                 return JsonResponse({"errors": form.errors.as_json()}, status=422)
 
@@ -106,7 +96,8 @@ class JobView(View):
             data = {}
             fields = jobs.values(*self.job_fields_with_id)
             for field in self.job_list_querystring:
-                data.update({field: request.GET.get(field)})
+                if request.GET.get(field):
+                    data.update({field: request.GET.get(field)})
 
             jobs = list(fields.filter(**data))
 
@@ -136,7 +127,7 @@ class JobView(View):
 
         if form.is_valid():
             instance = form.save()
-            return JsonResponse(model_to_dict(instance, fields=self.job_edit_fields), status=200)
+            return JsonResponse(model_to_dict(instance, fields=[field.name for field in instance._meta.fields]))
         else:
             return JsonResponse({"errors": form.errors.as_json()}, status=422)
 

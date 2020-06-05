@@ -88,6 +88,7 @@ class JobTracking(models.Model):
         # ordering = ['-id']
         verbose_name_plural = 'Job tracking'
         unique_together = ['job', 'seeker_id']
+        # unique_together = ['job', 'seeker_id', 'seeker_name']
 
     def __str__(self):
         return str(self.seeker_name)
