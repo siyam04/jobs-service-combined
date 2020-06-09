@@ -19,7 +19,6 @@ from django.urls import path, include
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 
-# from .views import home
 
 urlpatterns = [
 
@@ -27,7 +26,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # home
-    # path('', home),
     path('', TemplateView.as_view(template_name="home.html")),
 
     # custom app-1 (jobs)
