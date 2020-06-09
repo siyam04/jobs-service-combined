@@ -17,15 +17,18 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path, include
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 
-from .views import home
+# from .views import home
 
 urlpatterns = [
 
     # jobs admin
     path('admin/', admin.site.urls),
 
-    path('', home),
+    # home
+    # path('', home),
+    path('', TemplateView.as_view(template_name="home.html")),
 
     # custom app-1 (jobs)
     path('api/', include('jobs.urls')),
