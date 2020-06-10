@@ -1,15 +1,13 @@
 from django.urls import path
-from django.http import HttpResponse
 
 from .views import (
 
     StaticChoiceView,
     JobView,
     CategoryView,
-    AppliedJobsBySeekerIDView,
+    AppliedJobsBySeekerView,
     PostedJobListByEmployerView,
     JobWiseSeekerListView,
-
 )
 
 
@@ -39,7 +37,7 @@ urlpatterns = [
     path('category/<int:id>/', CategoryView.as_view()),
 
     # 11. Applied Jobs by Seeker ID (GET): http://127.0.0.1:8000/api/job/seeker/{id}/
-    path('job/seeker/<int:id>/', AppliedJobsBySeekerIDView.as_view()),
+    path('job/seeker/<int:id>/', AppliedJobsBySeekerView.as_view()),
 
     # 12. Posted Job List by Employer ID (GET): http://127.0.0.1:8000/api/job/employer/{id}/
     path('job/employer/<int:id>/', PostedJobListByEmployerView.as_view()),

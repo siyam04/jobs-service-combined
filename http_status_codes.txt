@@ -1,0 +1,5 @@
+200 = Ok (GET, PUT, DELETE)
+201 = Created (POST)
+204 = No Content (DELETE)
+404 = Not Found (GET)
+422 = Unprocessable Entity (POST)
