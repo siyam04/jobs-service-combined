@@ -102,7 +102,7 @@ class JobView(View):
             jobs = list(fields.filter(**data))
 
             # pagination
-            paginator = Paginator(jobs, 3)
+            paginator = Paginator(jobs, 4)
             page_number = request.GET.get('page')
             page_obj = paginator.get_page(page_number)
             context = {
