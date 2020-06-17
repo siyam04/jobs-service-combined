@@ -26,8 +26,8 @@ SECRET_KEY = 'qltq(j^+@4j1_i8hr4sga@c2$a5!dwrxtwg0wn$bi*)n7dl%@g'
 DEBUG = True
 
 
-# ALLOWED_HOSTS = ['galib04.pythonanywhere.com', '127.0.0.1']
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['galib04.pythonanywhere.com', '127.0.0.1', 'jobs-frontend.herokuapp.com']
+# ALLOWED_HOSTS = ['*']
 
 
 # Application definition
